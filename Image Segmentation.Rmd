@@ -1,0 +1,58 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+### Read Data
+```{r}
+
+flower <- read.csv("data/flower.csv", header = FALSE)
+str(flower)
+
+flowerMatrix <- as.matrix(flower)
+str(flowerMatrix)
+
+flowerVector <- as.vector(flowerMatrix)
+str(flowerVector)
+
+flowerVector_2 <- as.vector(flower)
+str(flowerVector_2)
+
+
+
+```
+
+### Start clustering
+
+```{r}
+#compute the distance matrix for each data point.
+distance <- dist(flowerVector, method="euclidian")
+
+# ward helps minimizing the variance, and creating spehrical clusters.
+clusterIntensity = hclust(distance, method = "ward")
+
+#plot the Dendrogram
+plot(clusterIntensity)
+
+#mark the borders to see potential clusters if cut by 3
+rect.hclust(clusterIntensity, k = 3, border="red")
+
+#cut the dendrogram into 3 clusters
+flowerClusters <- cutree(clusterIntensity, k = 3)
+
+#check the intensity of each cluster
+tapply(flowerVector, flowerClusters, mean)
+
+#update the dimensions of the vector to be treated as a Matrix. Size = 50 x 50.
+dim(flowerClusters) = c(50, 50)
+
+# draw the image of Clusters obtained from the data
+image(flowerClusters, axes = FALSE)
+
+# draw the image of actual data matrix to compare the difference.
+image(flowerMatrix, axes = FALSE, col= grey(seq(0,1, length=256)))
+
+
+```
+

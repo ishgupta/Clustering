@@ -1,0 +1,62 @@
+---
+title: "Clustering for Movie Recommendations"
+output: html_notebook
+---
+
+
+```{r}
+
+```
+
+
+
+### Read Data
+```{r}
+
+movies <- read.table("data/movielens.txt", sep = "|", quote = "\"", header = FALSE)
+str(movies)
+
+colnames(movies) <- c("ID", "Title", "ReleaseDate", "VideoReleaseDate", "IMDB", "Unknown", "Action","Adventure", "Animation", "Childrens", "Comdey", "Crime", "Documentary", "Drama", "Fantasy", "FilmNoir", "Horror", "Musical","Mystery","Romance", "SciFi", "Thriller", "War", "Western")
+
+str(movies)
+
+movies$ID = NULL
+movies$ReleaseDate = NULL
+movies$VideoReleaseDate = NULL
+movies$IMDB = NULL
+
+movies = unique(movies)
+
+```
+
+### Cluster
+
+```{r}
+distances = dist(movies[2:20], method = "euclidian")
+
+#ward takes care of centroid distances and the variance of each of the Clusters
+clusterMovies = hclust(distances, method = "ward")
+
+plot(clusterMovies)
+#plot plots the dendrogram with the name of each data point which does not fit well on the diagram. 
+
+#cut a tree into 10 Clusters
+clusterGroups = cutree(clusterMovies, k = 10)
+
+tapply(movies$Action, clusterGroups, mean)
+# divides data points into 10 clusters, and computes the average of each Cluster for the Action Genre.
+# 78% movies in Cluster 2 are Action.
+
+tapply(movies$Romance, clusterGroups, mean)
+# all the movies in Cluster 6 and 7 are Romance.
+
+subset(movies, Title=="Men in Black (1997)")
+
+clusterGroups[257]
+
+## to check the movies in Cluster 2
+cluster2 <- subset(movies, clusterGroups == 2)
+cluster2$Title[1:10]
+
+```
+

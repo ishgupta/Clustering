@@ -1,0 +1,88 @@
+---
+title: "Image Segmentation for MRI"
+output: html_notebook
+---
+
+```{r}
+
+healthy <- read.csv("data/healthy.csv", header = FALSE)
+str(healthy)  # 566 x 646
+healthyMatrix <- as.matrix(healthy)
+
+str(healthyMatrix)
+# It is 566 x 646- larger than the Flower image.
+
+image(healthyMatrix, axes = FALSE, col=grey(seq(0,1 , length =256)))
+
+healthyVector <- as.vector(healthyMatrix)
+
+#steps for Hierarchichal Clustering
+#1. Compute the Distance Matrix
+distance <- dist(healthyVector, method="euclidian")
+
+str(healthyVector)
+# This vector has a huge number of elements.
+n = 365636
+
+# For R to calculate pairwise distances, it will actually need to calculate n * (n-1)/2 of these values and store them in the Distance matrix.
+
+
+n * (n-1)/2
+# This computes quite a huge value which is the reason for R to compain of storing such a big matrix.
+# Hierarchical Clustering therefore, cannot be used here with the MRI image Clustering.
+
+# Another alternate Approach? - KMeans
+
+#Step 1: Choose number of Clusters.
+k = 5
+
+# Step 2 : Randomly assign each data point to a Cluster
+# Step 3: Compute Cluster Centroids
+# Step 4: Re- assign the data point to nearest Cluster mean.
+# Step 5: Re-compute Cluster centroids.
+# Step 6: Go back to Step 4, and repeat till 5 until no replacements are made.
+set.seed(1)
+kmc = kmeans(healthyVector, centers = k, iter.max = 1000)
+
+str(kmc)
+#First parameter of the Output- Cluster vector assigns each element in the healthy vector to a Cluster
+
+healthyClusters = kmc$cluster
+
+# mean intensity values of each Cluster can be seen using the centers function, which needed using mean with tapply in case of Hierarchical.
+kmc$centers
+
+#All the centers are < 0.5, which tells they are close to Zero, and hence Darker.
+
+# output the segmented image, but first convert the healthy clusters vector into a matrix
+
+dim(healthyClusters) <- c(nrow(healthyMatrix), ncol(healthyMatrix))
+
+image(healthyClusters, axes = FALSE, col= rainbow(k))
+
+tumor <- read.csv("data/tumor.csv", header = FALSE)
+str(tumor) # 571 x 512
+tumorMatrix <- as.matrix(tumor)
+tumorVector <- as.vector(tumorMatrix)
+
+# we wont run the Kmeans on Tumor vector again- Treat healthy vector as a training set, and tumor as a Test Set.
+# load flexclust package.
+library(flexclust)
+
+#flexclust contains object type kcca- which is k centroid cluster analysis
+#we need to convert the information from Clustering algorithm to the object of Class KCCA
+
+kmc.kcca = as.kcca(kmc, healthyVector)
+
+# Cluster the pixles in Tumor vector using the predict function.
+tumorClusters <- predict(kmc.kcca, newdata = tumorVector)
+dim(tumorClusters) <- c(nrow(tumorMatrix), ncol(tumorMatrix))
+
+
+mfrow=c(2,2) 
+image(healthyClusters, axes = FALSE, col= rainbow(k), main= " Data")
+image(tumorClusters, axes = FALSE, col= rainbow(k), main= "Predicted")
+
+# The blue part as can be seen in the predicted was not present earlier in the Actual data- which is actually the Tumor as predicted by our algorithm.
+
+```
